@@ -193,12 +193,18 @@ button{font-family:inherit;cursor:pointer;}
 #gateEnter:active{transform:scale(.96);background:rgba(217,180,91,.08);}
 .gNote{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);
   font-size:10.5px;letter-spacing:.2em;color:rgba(237,227,203,.4);}
+#updToast{position:fixed;left:50%;transform:translateX(-50%) translateY(16px);opacity:0;pointer-events:none;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 96px);z-index:70;background:rgba(12,9,7,.94);
+  border:1px solid var(--gold);color:var(--gold2);font-size:11px;letter-spacing:.16em;
+  padding:11px 20px;border-radius:999px;transition:opacity .4s,transform .4s;cursor:pointer;white-space:nowrap;}
+#updToast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
 </style>
 </head>
 <body style="background:#070403">
 <div id="app"></div>
 <div id="vignette"></div>
 <div id="grain"></div>
+<div id="updToast">MISE À JOUR PRÊTE · TOUCHER POUR RECHARGER</div>
 
 <div id="topbar">
   <div id="bankWrap"><span id="bankVal">1 000 €</span><button id="caisseBtn">CAISSE +1 000</button></div>
@@ -2172,7 +2178,19 @@ function makeGrain(){
 </script>
 <script>
 if('serviceWorker' in navigator){
-  addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
+  addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg=>{ setInterval(()=>reg.update().catch(()=>{}),600000); })
+      .catch(()=>{});
+    let hadCtl=!!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{
+      if(!hadCtl){ hadCtl=true; return; }
+      const g=document.getElementById('gate');
+      if(g&&!g.classList.contains('away')){ location.reload(); return; }
+      const t=document.getElementById('updToast');
+      if(t){ t.classList.add('show'); t.onclick=()=>location.reload(); }
+    });
+  });
 }
 </script>
 </body>
