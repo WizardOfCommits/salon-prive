@@ -1,4 +1,4 @@
-const C='salon-prive-v8';
+const C='salon-prive-v9';
 const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 self.addEventListener('install',e=>{ self.skipWaiting(); e.waitUntil(caches.open(C).then(c=>c.addAll(ASSETS))); });
 self.addEventListener('activate',e=>{ e.waitUntil(

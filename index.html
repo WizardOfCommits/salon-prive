@@ -1233,7 +1233,10 @@ function startSpin(){
   ball.position.set(R_TRACK,.55,0); ball.visible=true;
   const ticks=[]; let acc=T1+.15;
   [.26,.36,.48,.64,.85].forEach(g=>{ acc+=g*rand(.85,1.15); if(acc<T2-.12) ticks.push(acc); });
-  spin={n,aWin,th0,t:0,ticks,ti:0,lastTick:-9,cap:null,prevSin:0,announced:false,done:false};
+  spin={n,aWin,th0,t:0,ticks,ti:0,lastTick:-9,cap:null,announced:false,done:false,
+    wob:rand(0,TAU),defT:0,lastTheta:th0,lastHop:-1,
+    hopOffs:[rand(-1.6,1.6)*STEP,rand(-.8,.8)*STEP,0],
+    hopAmp:rand(.085,.125)};
   rotorTarget=.8;
   A.whoosh(); A.rollStart(T1,T2,T3);
 }
@@ -1246,11 +1249,30 @@ function updateSpin(dt){
     setPhaseLbl('Rien ne va plus',true);
   }
   let theta,r,y;
-  if(t<T1){ theta=spin.th0-distA(t); r=R_TRACK; y=.55; }
+  if(t<T1){
+    theta=spin.th0-distA(t); r=R_TRACK; y=.55;
+    // la bille respire sur la piste, s'amortit juste avant le décrochage
+    const w=(t/T1)*Math.min(1,(T1-t)*2.5);
+    y+=.006*Math.sin(theta*7+spin.wob)*(.4+w);
+    r+=.014*Math.sin(theta*3+spin.wob)*w;
+  }
   else if(t<T2){
     const tb=t-T1, s=tb/(T2-T1);
     theta=spin.th0-distAB(tb);
     r=lerp(R_TRACK,1.4,smooth(s)); y=lerp(.55,.4,s);
+    // franchissement du rang des losanges : impact seulement si l'un d'eux est proche
+    if(!spin.defT&&r<=1.70){
+      const rel=((theta-Math.PI/8)%(Math.PI/4)+Math.PI/4)%(Math.PI/4);
+      const dd=Math.min(rel,Math.PI/4-rel);
+      spin.defT=dd<.16?t:-1;
+      if(spin.defT>0) A.bounce(.42);
+    }
+    if(spin.defT>0){
+      const d2=t-spin.defT;
+      y+=2.66*d2*Math.exp(-14*d2);
+      r+=.05*Math.sin(Math.min(d2*10,Math.PI))*Math.exp(-6*d2);
+      theta+=.11*(1-Math.exp(-7*d2));
+    }
     while(spin.ti<spin.ticks.length&&t>spin.ticks[spin.ti]){
       A.tick(Math.max(.1,.5-spin.ti*.07)); spin.lastTick=spin.ticks[spin.ti]; spin.ti++;
     }
@@ -1259,8 +1281,7 @@ function updateSpin(dt){
   else if(t<T3){
     if(!spin.cap){
       const rho=rotor.rotation.y;
-      const thNow=spin.th0-distAB(T2-T1);
-      const d0=thNow-rho;
+      const d0=spin.lastTheta-rho;
       const d=((d0-spin.aWin)%TAU+TAU)%TAU;
       const dr=d+(d<Math.PI?TAU:0);
       spin.cap={d0,dT:d0-dr,m0:-(vB1+rotorSpeed)*(T3-T2)};
@@ -1268,13 +1289,16 @@ function updateSpin(dt){
     const s=(t-T2)/(T3-T2);
     const h00=2*s*s*s-3*s*s+1, h10=s*s*s-2*s*s+s, h01=-2*s*s*s+3*s*s;
     const delta=h00*spin.cap.d0+h10*spin.cap.m0+h01*spin.cap.dT;
-    theta=rotor.rotation.y+delta;
-    r=lerp(1.4,1.13,easeOutCubic(s));
+    // trois sautillements de poche en poche, amplitude décroissante, retour exact à l'arrivée
+    const hs=s*3, hi=Math.min(2,Math.floor(hs)), hf=hs-hi;
+    if(hi!==spin.lastHop){ if(hi>0) A.bounce(Math.max(.08,.3*Math.pow(.5,hi))); spin.lastHop=hi; }
+    const damp=Math.pow(.42,hi);
+    const prevOff=hi===0?0:spin.hopOffs[hi-1];
+    const aOff=lerp(prevOff,spin.hopOffs[hi],smooth(hf));
+    theta=rotor.rotation.y+delta+aOff;
+    r=lerp(1.4,1.13,easeOutCubic(s))+.015*Math.sin(hs*Math.PI*2)*(1-s);
     const yb=lerp(.4,.145,easeOutCubic(s));
-    const sn=Math.sin(s*Math.PI*3.2);
-    y=yb+.1*Math.exp(-4.5*s)*Math.abs(sn);
-    if((spin.prevSin>0&&sn<=0)||(spin.prevSin<0&&sn>=0)) A.bounce(Math.max(.08,.3*(1-s)));
-    spin.prevSin=sn;
+    y=yb+spin.hopAmp*damp*Math.sin(hf*Math.PI)*(1-s*.25);
   }
   else{
     spin.done=true;
@@ -1286,6 +1310,7 @@ function updateSpin(dt){
     setTimeout(()=>settle(n),900);
     return;
   }
+  spin.lastTheta=theta;
   ballPivot.rotation.y=theta;
   ball.position.set(r,y,0);
 }
