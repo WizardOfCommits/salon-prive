@@ -1968,7 +1968,11 @@ function loop(ts){
 function renderStats(){
   const b=$('statsBody');
   if(spins===0){
-    b.innerHTML='<div class="sEmpty">Aucun tirage pour l\u2019instant.<br>Lance la bille, le tableau se remplit.</div>';
+    const dot0=n=>'<span class="sdot '+(n===0?'bg-green':(RED.has(n)?'bg-red':'bg-black'))+'">'+n+'</span>';
+    b.innerHTML=
+      '<div class="sTitle">Derniers num\u00e9ros de la table</div>'+
+      '<div class="sRow">'+(historyNums.length?historyNums.map(dot0).join(''):'\u2014')+'</div>'+
+      '<div class="sEmpty">Tes tendances personnelles s\u2019\u00e9criront \u00e0 ta premi\u00e8re bille.</div>';
     return;
   }
   const idx=[...Array(37).keys()];
@@ -2129,6 +2133,10 @@ function makeGrain(){
   camera.updateProjectionMatrix();
   setPhaseLbl('',false);
   await loadState();
+  // une table vit avant qu'on s'y assoie : le tableau affiche les derniers tirages
+  const seed=8+Math.floor(Math.random()*4);
+  for(let i=0;i<seed;i++) historyNums.push(Math.floor(Math.random()*37));
+  renderHistory();
   displayBank=bank;
   $('bankVal').textContent=eur(bank);
   $('gateStats').textContent=rounds>0
