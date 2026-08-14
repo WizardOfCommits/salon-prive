@@ -781,31 +781,97 @@ function feltTexture(){
   return t;
 }
 function bandTexture(){
-  const W=2048,H=150,c=cvs(W,H),g=c.getContext('2d');
-  g.fillStyle='#141210'; g.fillRect(0,0,W,H);
+  const W=4096,H=192,c=cvs(W,H),g=c.getContext('2d');
+  g.fillStyle='#17130f'; g.fillRect(0,0,W,H);
   const cw=W/37;
   const uOf=a=>((((a+Math.PI/2)/TAU)%1)+1)%1;
   for(let i=0;i<37;i++){
     const n=ORDER[i], cx=uOf(i*STEP)*W;
-    const col=n===0?'#0f7a4c':(RED.has(n)?'#ae2532':'#191614');
+    const col=n===0?'#0e7a4a':(RED.has(n)?'#a1202e':'#15120f');
     [-W,0,W].forEach(o=>{ g.fillStyle=col; g.fillRect(cx+o-cw/2,0,cw,H); });
   }
-  g.fillStyle='#c9a959';
+  const sh=g.createLinearGradient(0,0,0,H);
+  sh.addColorStop(0,'rgba(255,235,190,.10)'); sh.addColorStop(.25,'rgba(0,0,0,0)');
+  sh.addColorStop(.9,'rgba(0,0,0,.30)'); sh.addColorStop(1,'rgba(0,0,0,.45)');
+  g.fillStyle=sh; g.fillRect(0,0,W,H);
   for(let i=0;i<37;i++){
     const cx=uOf(i*STEP+STEP/2)*W;
-    [-W,0,W].forEach(o=>g.fillRect(cx+o-1.1,0,2.2,H));
+    [-W,0,W].forEach(o=>{
+      g.fillStyle='rgba(0,0,0,.5)'; g.fillRect(cx+o-3.4,0,6.8,H);
+      g.fillStyle='#c9a959'; g.fillRect(cx+o-2.2,0,4.4,H);
+      g.fillStyle='rgba(255,240,200,.75)'; g.fillRect(cx+o-2.2,0,1.4,H);
+    });
   }
-  g.fillRect(0,0,W,5); g.fillRect(0,H-5,W,5);
-  g.font='800 50px "Bodoni 72", Didot, Georgia, serif';
+  g.fillStyle='#c9a959';
+  g.fillRect(0,0,W,7); g.fillRect(0,H-7,W,7);
+  g.font='800 96px "Bodoni 72", Didot, Georgia, serif';
   g.textAlign='center'; g.textBaseline='middle';
-  g.lineWidth=6; g.strokeStyle='rgba(0,0,0,.55)'; g.fillStyle='#f6efdc';
+  g.lineWidth=10; g.lineJoin='round'; g.strokeStyle='rgba(0,0,0,.6)'; g.fillStyle='#f3ecd9';
   for(let i=0;i<37;i++){
     const cx=uOf(i*STEP)*W;
-    [-W,0,W].forEach(o=>{ g.save(); g.translate(cx+o,H/2); g.rotate(Math.PI);
-      g.strokeText(String(ORDER[i]),0,3); g.fillText(String(ORDER[i]),0,3); g.restore(); });
+    [-W,0,W].forEach(o=>{ g.save(); g.translate(cx+o,H/2); g.rotate(Math.PI); g.scale(-.86,1);
+      g.strokeText(String(ORDER[i]),0,6); g.fillText(String(ORDER[i]),0,6); g.restore(); });
   }
   const t=tex(c); t.wrapS=THREE.RepeatWrapping;
-  t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+  t.anisotropy=Math.min(16,renderer.capabilities.getMaxAnisotropy());
+  return t;
+}
+function pocketTex(){
+  const S=2048,c=cvs(S,S),g=c.getContext('2d'),h=S/2;
+  const R_OUT=h, R_IN=h*(.95/1.17);
+  g.fillStyle='#100d0a'; g.fillRect(0,0,S,S);
+  for(let i=0;i<37;i++){
+    const n=ORDER[i], a0=i*STEP-STEP/2, a1=i*STEP+STEP/2;
+    g.beginPath();
+    g.arc(h,h,R_OUT,-a1,-a0);
+    g.arc(h,h,R_IN,-a0,-a1,true);
+    g.closePath();
+    g.fillStyle=n===0?'#0d6e43':(RED.has(n)?'#941d2a':'#14110d');
+    g.fill();
+  }
+  const grd=g.createRadialGradient(h,h,R_IN,h,h,R_OUT);
+  grd.addColorStop(0,'rgba(0,0,0,.25)'); grd.addColorStop(.3,'rgba(0,0,0,.02)');
+  grd.addColorStop(.8,'rgba(0,0,0,.04)'); grd.addColorStop(1,'rgba(0,0,0,.35)');
+  g.fillStyle=grd;
+  g.beginPath(); g.arc(h,h,R_OUT,0,TAU); g.arc(h,h,R_IN,0,TAU,true); g.fill();
+  g.strokeStyle='#c9a959'; g.lineWidth=5;
+  for(let i=0;i<37;i++){
+    const a=i*STEP+STEP/2, ca=Math.cos(a), sa=-Math.sin(a);
+    g.beginPath(); g.moveTo(h+R_IN*ca,h+R_IN*sa); g.lineTo(h+R_OUT*ca,h+R_OUT*sa); g.stroke();
+  }
+  g.lineWidth=6; g.beginPath(); g.arc(h,h,R_IN+3,0,TAU); g.stroke();
+  const Rm=(R_IN+R_OUT)/2;
+  g.font='800 118px "Bodoni 72", Didot, Georgia, serif';
+  g.textAlign='center'; g.textBaseline='middle';
+  g.lineWidth=10; g.lineJoin='round';
+  for(let i=0;i<37;i++){
+    const a=i*STEP;
+    const px=h+Rm*Math.cos(a), py=h-Rm*Math.sin(a);
+    g.save(); g.translate(px,py); g.rotate(-Math.PI/2-a); g.scale(.82,1);
+    g.strokeStyle='rgba(0,0,0,.7)'; g.fillStyle='#f6eeda';
+    g.strokeText(String(ORDER[i]),0,4); g.fillText(String(ORDER[i]),0,4);
+    g.restore();
+  }
+  const t=tex(c);
+  t.anisotropy=Math.min(16,renderer.capabilities.getMaxAnisotropy());
+  return t;
+}
+function woodTex(){
+  const S=1024,c=cvs(S,S),g=c.getContext('2d');
+  const base=g.createLinearGradient(0,0,0,S);
+  base.addColorStop(0,'#4a2413'); base.addColorStop(.5,'#3c1d0e'); base.addColorStop(1,'#472312');
+  g.fillStyle=base; g.fillRect(0,0,S,S);
+  for(let y=0;y<S;y++){
+    const n=Math.sin(y*.11)*.5+Math.sin(y*.043+1.7)*.3+Math.sin(y*.021+.6)*.2;
+    g.fillStyle='rgba(20,8,3,'+(.05+.05*Math.abs(n)).toFixed(3)+')';
+    g.fillRect(0,y,S,1);
+  }
+  for(let i=0;i<900;i++){
+    const x=Math.random()*S, w=.6+Math.random()*1.6, hh=30+Math.random()*160, y=Math.random()*S;
+    g.fillStyle='rgba('+(Math.random()<.5?'0,0,0':'255,190,120')+','+(.015+Math.random()*.03).toFixed(3)+')';
+    g.fillRect(x,y,w,hh);
+  }
+  const t=tex(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(2,1);
   return t;
 }
 function plaqueTexture(name){
@@ -971,53 +1037,73 @@ function buildScene(){
 
   // ------- roue -------
   const W=new THREE.Group(); W.position.set(0,0,WHEEL_Z); scene.add(W);
-  const skirt=new THREE.Mesh(new THREE.CylinderGeometry(2.38,2.5,.3,64),MAT.woodDark);
-  skirt.position.y=.15; skirt.castShadow=true; W.add(skirt);
-  const rimPts=[[2.36,.30],[2.52,.33],[2.6,.45],[2.56,.58],[2.4,.6],[2.32,.56]].map(p=>new THREE.Vector2(p[0],p[1]));
-  const rimMesh=new THREE.Mesh(new THREE.LatheGeometry(rimPts,64),MAT.wood);
-  rimMesh.castShadow=true; W.add(rimMesh);
-  const bowlPts=[[1.4,.195],[1.52,.24],[1.62,.28],[1.72,.33],[1.85,.42],[1.98,.5],[2.1,.545],[2.24,.565],[2.36,.575]].map(p=>new THREE.Vector2(p[0],p[1]));
-  const bowl=new THREE.Mesh(new THREE.LatheGeometry(bowlPts,64),
-    new THREE.MeshStandardMaterial({color:0x2c1a0e,roughness:.32,metalness:.15}));
-  W.add(bowl);
+  MAT.wheelWood=new THREE.MeshPhysicalMaterial({map:woodTex(),roughness:.33,
+    clearcoat:.65,clearcoatRoughness:.28,side:THREE.DoubleSide});
+
+  // stator : un seul profil fermé, du creux central au bord extérieur (rien à voir au travers)
+  const statPts=[
+    [1.24,.030],[1.26,.095],[1.30,.155],
+    [1.46,.249],[1.62,.343],[1.78,.438],[1.86,.485],
+    [1.90,.502],[1.95,.4945],[2.02,.502],[2.09,.530],
+    [2.18,.575],[2.30,.601],[2.44,.604],[2.55,.575],[2.60,.520],
+    [2.615,.400],[2.600,.215],[2.565,.040],[2.550,0],
+    [1.60,0],[1.28,0],[1.24,.030]
+  ].map(p=>new THREE.Vector2(p[0],p[1]));
+  const stator=new THREE.Mesh(new THREE.LatheGeometry(statPts,128),MAT.wheelWood);
+  stator.castShadow=true; stator.receiveShadow=true; W.add(stator);
+  const trimA=new THREE.Mesh(new THREE.TorusGeometry(2.30,.016,10,96).rotateX(Math.PI/2),MAT.gold);
+  trimA.position.y=.601; W.add(trimA);
+  const trimB=new THREE.Mesh(new THREE.TorusGeometry(2.09,.013,10,96).rotateX(Math.PI/2),MAT.gold);
+  trimB.position.y=.532; W.add(trimB);
+
+  // losanges déflecteurs sur le tablier, alternés vertical / horizontal
+  const apronY=r=>.155+(r-1.30)*.589;
+  const diaGeo=new THREE.OctahedronGeometry(.062);
   for(let j=0;j<8;j++){
-    const d=new THREE.Mesh(new THREE.OctahedronGeometry(.06),MAT.gold);
-    d.position.copy(polar(j*Math.PI/4+Math.PI/8,1.82,.43));
-    d.scale.set(1,.75,.55); d.rotation.y=j*Math.PI/4; W.add(d);
+    const a=j*Math.PI/4+Math.PI/8, vert=(j%2===0);
+    const d=new THREE.Mesh(diaGeo,MAT.gold);
+    d.position.copy(polar(a,1.70,apronY(1.70)+.01));
+    d.scale.set(vert?1.75:.6,.42,vert?.6:1.75);
+    d.rotation.y=a; d.rotateZ(.53);
+    d.castShadow=true; W.add(d);
   }
 
   rotor=new THREE.Group(); W.add(rotor);
-  const pocketFloor=new THREE.Mesh(new THREE.RingGeometry(.95,1.17,64).rotateX(-Math.PI/2),MAT.dark);
-  pocketFloor.position.y=.085; rotor.add(pocketFloor);
-  const wall=new THREE.Mesh(new THREE.CylinderGeometry(1.17,1.17,.13,64,1,true),MAT.dark);
-  wall.position.y=.14; rotor.add(wall);
-  const fretGeo=new THREE.BoxGeometry(.2,.075,.018);
+  const metalDark=new THREE.MeshStandardMaterial({color:0x16120e,metalness:.62,roughness:.46,side:THREE.DoubleSide});
+  const pocketFloor=new THREE.Mesh(new THREE.RingGeometry(.95,1.17,148,1).rotateX(-Math.PI/2),
+    new THREE.MeshStandardMaterial({map:pocketTex(),roughness:.55,metalness:.12,side:THREE.DoubleSide}));
+  pocketFloor.position.y=.085; pocketFloor.receiveShadow=true; rotor.add(pocketFloor);
+  const wallIn=new THREE.Mesh(new THREE.CylinderGeometry(.95,.95,.125,96,1,true),metalDark);
+  wallIn.position.y=.1475; rotor.add(wallIn);
+  const wallOut=new THREE.Mesh(new THREE.CylinderGeometry(1.17,1.17,.125,148,1,true),metalDark);
+  wallOut.position.y=.1475; rotor.add(wallOut);
+  const fretGeo=new THREE.BoxGeometry(.235,.105,.017);
   for(let i=0;i<37;i++){
     const a=i*STEP+STEP/2;
     const f=new THREE.Mesh(fretGeo,MAT.gold);
-    f.position.copy(polar(a,1.055,.125)); f.rotation.y=a; rotor.add(f);
+    f.position.copy(polar(a,1.058,.1375)); f.rotation.y=a; f.castShadow=true; rotor.add(f);
   }
-  const band=new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.16,.14,128,1,true),
-    new THREE.MeshStandardMaterial({map:bandTexture(),roughness:.48,metalness:.12,side:THREE.DoubleSide}));
+  const band=new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.16,.14,192,1,true),
+    new THREE.MeshStandardMaterial({map:bandTexture(),roughness:.42,metalness:.12,side:THREE.DoubleSide}));
   band.position.y=.275; rotor.add(band);
-  const bandEdge=new THREE.Mesh(new THREE.TorusGeometry(1.6,.02,10,72).rotateX(Math.PI/2),MAT.gold);
+  const bandEdge=new THREE.Mesh(new THREE.TorusGeometry(1.6,.02,10,128).rotateX(Math.PI/2),MAT.gold);
   bandEdge.position.y=.348; rotor.add(bandEdge);
-  const bandEdgeIn=new THREE.Mesh(new THREE.TorusGeometry(1.16,.016,10,64).rotateX(Math.PI/2),MAT.gold);
+  const bandEdgeIn=new THREE.Mesh(new THREE.TorusGeometry(1.16,.016,10,96).rotateX(Math.PI/2),MAT.gold);
   bandEdgeIn.position.y=.207; rotor.add(bandEdgeIn);
-  const hub=new THREE.Mesh(new THREE.CylinderGeometry(.55,.99,.17,48),MAT.woodDark);
-  hub.position.y=.17; rotor.add(hub);
-  const hubTrim=new THREE.Mesh(new THREE.TorusGeometry(.98,.03,10,48).rotateX(Math.PI/2),MAT.gold);
+  const hub=new THREE.Mesh(new THREE.CylinderGeometry(.55,.97,.17,64),MAT.wheelWood);
+  hub.position.y=.17; hub.castShadow=true; rotor.add(hub);
+  const hubTrim=new THREE.Mesh(new THREE.TorusGeometry(.96,.03,10,64).rotateX(Math.PI/2),MAT.gold);
   hubTrim.position.y=.255; rotor.add(hubTrim);
-  const turret=new THREE.Mesh(new THREE.CylinderGeometry(.06,.3,.34,24),MAT.gold);
+  const turret=new THREE.Mesh(new THREE.CylinderGeometry(.06,.3,.34,32),MAT.gold);
   turret.position.y=.42; turret.castShadow=true; rotor.add(turret);
-  const knob=new THREE.Mesh(new THREE.SphereGeometry(.11,18,14),MAT.gold);
+  const knob=new THREE.Mesh(new THREE.SphereGeometry(.11,22,16),MAT.gold);
   knob.position.y=.63; rotor.add(knob);
-  const h1=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1.05,10).rotateZ(Math.PI/2),MAT.gold);
+  const h1=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1.05,12).rotateZ(Math.PI/2),MAT.gold);
   h1.position.y=.57; rotor.add(h1);
-  const h2=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1.05,10).rotateX(Math.PI/2),MAT.gold);
+  const h2=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,1.05,12).rotateX(Math.PI/2),MAT.gold);
   h2.position.y=.57; rotor.add(h2);
   [[.52,0],[-.52,0],[0,.52],[0,-.52]].forEach(p=>{
-    const s=new THREE.Mesh(new THREE.SphereGeometry(.055,12,10),MAT.gold);
+    const s=new THREE.Mesh(new THREE.SphereGeometry(.055,14,12),MAT.gold);
     s.position.set(p[0],.57,-p[1]); rotor.add(s);
   });
   hlRing=new THREE.Mesh(new THREE.TorusGeometry(.1,.022,10,28).rotateX(Math.PI/2),
